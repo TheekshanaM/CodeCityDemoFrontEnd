@@ -1,0 +1,47 @@
+[
+  {
+    "name": "Insert",
+    "data": [
+      {
+        "x": "Current version",
+        "y": [0, 10]
+      },
+
+      {
+        "x": "Current version",
+        "y": [25, 50]
+      },
+      {
+        "x": "Current version",
+        "y": [75, 110]
+      }
+    ]
+  },
+  {
+    "name": "Not Change",
+    "data": [
+      {
+        "x": "Current version",
+        "y": [10, 20]
+      },
+
+      {
+        "x": "Current version",
+        "y": [50, 64]
+      }
+    ]
+  },
+  {
+    "name": "Delete",
+    "data": [
+      {
+        "x": "Older version",
+        "y": [20, 25]
+      },
+      {
+        "x": "Older version",
+        "y": [40, 48]
+      }
+    ]
+  }
+]
