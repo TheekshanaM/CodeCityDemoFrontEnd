@@ -481,6 +481,7 @@ class App extends Component {
       }
       index++;
     });
+    path = path.replace(/\//g, ">");
     let request = null;
     request = axios.get(
       "http://localhost:8080/CodeCity/load/filedifferent/" +
@@ -497,8 +498,12 @@ class App extends Component {
       .then(response => {
         console.log(response);
         if (response.data != "") {
-          this.fileDiff = response.data.obj;
-          this.setState({ modalActive: true });
+          if (response.data.obj.length != 0) {
+            this.fileDiff = response.data.obj;
+            this.setState({ modalActive: true });
+          } else {
+            swal("Message", "nothing defferece two commits", "error");
+          }
         } else {
           swal(
             "Error during plot",
