@@ -73,6 +73,7 @@ class App extends Component {
   light = null;
   commits = [];
   fileDiff = null;
+  currentCommit = null;
 
   constructor(props) {
     super(props);
@@ -180,7 +181,7 @@ class App extends Component {
           BABYLON.ActionManager.OnPickTrigger,
           () => {
             this.hideTooltip;
-            this.openModal(bar.info.name);
+            this.openModal(bar.info.path, bar.info.NOL);
           }
         )
       );
@@ -220,6 +221,7 @@ class App extends Component {
         info: {
           name: data.name,
           url: data.url,
+          path: data.path,
           type: data.type,
           NOM: data.numberOfMethods,
           NOL: data.numberOfLines,
@@ -311,6 +313,7 @@ class App extends Component {
   }
 
   revertCode(repository, commitId) {
+    this.currentCommit = commitId;
     var res = repository.split("/");
     var auther = res[res.length - 2];
     var repo = res[res.length - 1];
@@ -325,12 +328,6 @@ class App extends Component {
 
     let request = null;
 
-    // request = axios.get(endpoint, {
-    //   // params: {
-    //   //   q: match[1],
-    //   //   b: branch
-    //   // }
-    // });
     request = axios.get(
       "http://localhost:8080/CodeCity/load/changecity/" +
         auther +
@@ -401,23 +398,46 @@ class App extends Component {
       //   // }
       // });
       request = axios.get(
-        // "http://localhost:8080/CodeCity/load/loadcity/" + auther + "/" + repo
-        "https://my-json-server.typicode.com/TheekshanaM/JsonDemo/posts"
+        "http://localhost:8080/CodeCity/load/loadcity/" + auther + "/" + repo
+        // "https://my-json-server.typicode.com/TheekshanaM/JsonDemo/posts"
       );
     }
 
     request
+      //   .then(response => {
+      //     this.setState({ loading: false });
+      //     this.reset();
+
+      //     var testJson = require("./test1.json");
+
+      //     this.commits = testJson.commits;
+      //     this.setState({ loadingTimeLine: true });
+      //     // console.log(this.commits);
+      //     this.plot(testJson.children);
+      //     this.updateCamera(testJson.width, testJson.depth);
+      //   })
+      //   .catch(e => {
+      //     this.setState({ loading: false });
+      //     swal(
+      //       "Error during plot",
+      //       "Something went wrong during the plot. Try again later",
+      //       "error"
+      //     );
+      //     console.error(e);
+      //   });
       .then(response => {
         this.setState({ loading: false });
         this.reset();
 
-        var testJson = require("./test1.json");
-
-        this.commits = testJson.commits;
+        // if (response.data.children && response.data.children.length === 0) {
+        //   swal('Invalid project', 'Only Go projects are allowed.', 'error');
+        // }
+        this.commits = response.data.commits;
+        this.currentCommit = this.commits[0];
         this.setState({ loadingTimeLine: true });
-        // console.log(this.commits);
-        this.plot(testJson.children);
-        this.updateCamera(testJson.width, testJson.depth);
+
+        this.plot(response.data.children);
+        this.updateCamera(response.data.width, response.data.depth);
       })
       .catch(e => {
         this.setState({ loading: false });
@@ -428,28 +448,6 @@ class App extends Component {
         );
         console.error(e);
       });
-    // .then(response => {
-    //   this.setState({ loading: false });
-    //   this.reset();
-
-    //   // if (response.data.children && response.data.children.length === 0) {
-    //   //   swal('Invalid project', 'Only Go projects are allowed.', 'error');
-    //   // }
-    //   this.commits = response.data.commits;
-    //   this.setState({ loadingTimeLine: true });
-
-    //   this.plot(response.data.children);
-    //   this.updateCamera(response.data.width, response.data.depth);
-    // })
-    // .catch(e => {
-    //   this.setState({ loading: false });
-    //   swal(
-    //     "Error during plot",
-    //     "Something went wrong during the plot. Try again later",
-    //     "error"
-    //   );
-    //   console.error(e);
-    // });
 
     // this.scene.freezeActiveMeshes();
     this.scene.autoClear = false; // Color buffer
@@ -459,6 +457,7 @@ class App extends Component {
   }
 
   onClick() {
+    this.setState({ loadingTimeLine: false });
     searchEvent(this.state.repository);
     this.process(this.state.repository, "", this.state.branch);
   }
@@ -472,9 +471,51 @@ class App extends Component {
     feedbackEvent();
   }
 
-  openModal() {
-    this.fileDiff = require("./test.json");
-    this.setState({ modalActive: true });
+  openModal(path, numberOfLines) {
+    // this.fileDiff = require("./test.json");
+    var oldCommit;
+    var index = 0;
+    this.commits.forEach(element => {
+      if (element == this.currentCommit) {
+        oldCommit = this.commits[index + 1];
+      }
+      index++;
+    });
+    let request = null;
+    request = axios.get(
+      "http://localhost:8080/CodeCity/load/filedifferent/" +
+        path +
+        "/" +
+        this.currentCommit +
+        "/" +
+        oldCommit +
+        "/" +
+        numberOfLines
+    );
+
+    request
+      .then(response => {
+        console.log(response);
+        if (response.data != "") {
+          this.fileDiff = response.data.obj;
+          this.setState({ modalActive: true });
+        } else {
+          swal(
+            "Error during plot",
+            "Something went wrong during the plot. Try again later",
+            "error"
+          );
+        }
+      })
+      .catch(e => {
+        // this.setState({ loading: false });
+        swal(
+          "Error during plot",
+          "Something went wrong during the plot. Try again later",
+          "error"
+        );
+        console.error(e);
+      });
   }
 
   closeModal() {

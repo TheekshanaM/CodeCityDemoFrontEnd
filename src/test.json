@@ -1,47 +1,24 @@
 [
   {
-    "name": "Insert",
     "data": [
-      {
-        "x": "Current version",
-        "y": [0, 10]
-      },
-
-      {
-        "x": "Current version",
-        "y": [25, 50]
-      },
-      {
-        "x": "Current version",
-        "y": [75, 110]
-      }
-    ]
+      { "x": "Current version", "y": [8, 9] },
+      { "x": "Current version", "y": [11, 12] }
+    ],
+    "name": "Insert"
   },
   {
-    "name": "Not Change",
     "data": [
-      {
-        "x": "Current version",
-        "y": [10, 20]
-      },
-
-      {
-        "x": "Current version",
-        "y": [50, 64]
-      }
-    ]
+      { "x": "Current version", "y": [0, 8] },
+      { "x": "Current version", "y": [9, 11] },
+      { "x": "Current version", "y": [12, 15] }
+    ],
+    "name": "Not Changed"
   },
   {
-    "name": "Delete",
     "data": [
-      {
-        "x": "Older version",
-        "y": [20, 25]
-      },
-      {
-        "x": "Older version",
-        "y": [40, 48]
-      }
-    ]
+      { "x": "Older version", "y": [8, 10] },
+      { "x": "Older version", "y": [12, 13] }
+    ],
+    "name": "Delete"
   }
 ]
