@@ -34,6 +34,10 @@ const colors = {
   STRUCT: {
     start: { r: 32, g: 156, b: 238 },
     end: { r: 0, g: 0, b: 0 }
+  },
+  DEPENDANCY: {
+    start: { r: 0, g: 255, b: 0 },
+    end: { r: 0, g: 0, b: 0 }
   }
 };
 
@@ -74,6 +78,11 @@ class App extends Component {
   commits = [];
   fileDiff = null;
   currentCommit = null;
+  supperTypeList = ["empty list"];
+  supperClassList = ["no supper Classes"];
+  interfaceList = ["no interfaces"];
+  responseData = null;
+  dependancyType;
 
   constructor(props) {
     super(props);
@@ -196,7 +205,7 @@ class App extends Component {
     return bar;
   };
 
-  plot(children, parent) {
+  plot(children, parent, dependancyClass, inteface) {
     if (!children) {
       return;
     }
@@ -204,11 +213,31 @@ class App extends Component {
     // console.log(children);
 
     children.forEach(data => {
-      var color = getProportionalColor(
-        colors[data.type].start,
-        colors[data.type].end,
-        Math.min(100, data.numberOfLines / 2000.0)
-      );
+      var color;
+      if (data.type == "STRUCT" && data.superClass == dependancyClass) {
+        color = getProportionalColor(
+          colors["DEPENDANCY"].start,
+          colors["DEPENDANCY"].end,
+          Math.min(100, data.numberOfLines / 2000.0)
+        );
+      } else {
+        color = getProportionalColor(
+          colors[data.type].start,
+          colors[data.type].end,
+          Math.min(100, data.numberOfLines / 2000.0)
+        );
+      }
+      if (data.interfaces != null) {
+        data.interfaces.forEach(element => {
+          if (element == inteface) {
+            color = getProportionalColor(
+              colors["DEPENDANCY"].start,
+              colors["DEPENDANCY"].end,
+              Math.min(100, data.numberOfLines / 2000.0)
+            );
+          }
+        });
+      }
 
       var mesh = this.addBlock({
         x: data.position.x,
@@ -234,7 +263,7 @@ class App extends Component {
       }
 
       if (data.children && data.children.length > 0) {
-        this.plot(data.children, mesh);
+        this.plot(data.children, mesh, dependancyClass, inteface);
       }
     });
   }
@@ -342,7 +371,7 @@ class App extends Component {
         this.setState({ loading: false });
         this.reset();
 
-        this.plot(response.data.children);
+        this.plot(response.data.children, null, "");
         this.updateCamera(response.data.width, response.data.depth);
       })
       .catch(e => {
@@ -433,10 +462,19 @@ class App extends Component {
         //   swal('Invalid project', 'Only Go projects are allowed.', 'error');
         // }
         this.commits = response.data.commits;
+        var list1 = response.data.supperClassList;
+        if (list1.length != 1) {
+          this.supperClassList = list1;
+        }
+        var list2 = response.data.interfacesList;
+        if (list2.length != 1) {
+          this.interfaceList = list2;
+        }
         this.currentCommit = this.commits[0];
         this.setState({ loadingTimeLine: true });
 
-        this.plot(response.data.children);
+        this.responseData = response.data.children;
+        this.plot(this.responseData, null, "", "");
         this.updateCamera(response.data.width, response.data.depth);
       })
       .catch(e => {
@@ -537,6 +575,28 @@ class App extends Component {
     return templates[template];
   }
 
+  selectSuperType = event => {
+    this.setState({ value: event.target.value });
+    if (event.target.value == "extends") {
+      this.supperTypeList = this.supperClassList;
+      this.dependancyType = "extends";
+    } else if (event.target.value == "implements") {
+      this.supperTypeList = this.interfaceList;
+      this.dependancyType = "implements";
+    }
+  };
+
+  getDependency = event => {
+    this.setState({ loading: true });
+    if (this.dependancyType == "extends") {
+      this.plot(this.responseData, null, event.target.value);
+    } else {
+      this.plot(this.responseData, null, "", event.target.value);
+    }
+    console.log(event.target.value);
+    this.setState({ loading: false });
+  };
+
   render() {
     return (
       <main onMouseMove={this.onMouseMove}>
@@ -582,8 +642,21 @@ class App extends Component {
                 repo={this.state.repository}
               />
             )}
+            <select onChange={this.selectSuperType}>
+              <option value="">Select one</option>
+              <option value="extends">Extends</option>
+              <option value="implements">Implements</option>
+            </select>
+
+            <select onChange={this.getDependency}>
+              {this.supperTypeList.map(list => (
+                <option key={list} value={list}>
+                  {list}
+                </option>
+              ))}
+            </select>
             {/* <Navbar /> */}
-            <p>
+            {/* <p>
               GoCity is an implementation of the Code City metaphor for
               visualizing Go source code. Visit our repository for{" "}
               <a href="https://github.com/rodrigo-brito/gocity">
@@ -596,7 +669,7 @@ class App extends Component {
                 click here
               </a>{" "}
               to generate one.
-            </p>
+            </p> */}
             <div className="field has-addons">
               <div className="control is-expanded">
                 <input
