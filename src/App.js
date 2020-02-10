@@ -23,21 +23,41 @@ const endpoint = "http://localhost:8080/CodeCity/load/changecity";
 
 // TODO: isolate in the constants file
 const colors = {
+  // PACKAGE: {
+  //   start: { r: 255, g: 100, b: 100 },
+  //   end: { r: 255, g: 100, b: 100 }
+  // },
+  // FILE: {
+  //   start: { r: 255, g: 255, b: 255 },
+  //   end: { r: 0, g: 0, b: 0 }
+  // },
+  // STRUCT: {
+  //   start: { r: 32, g: 156, b: 238 },
+  //   end: { r: 0, g: 0, b: 0 }
+  // },
+  // DEPENDANCY: {
+  //   start: { r: 0, g: 255, b: 0 },
+  //   end: { r: 0, g: 0, b: 0 }
+  // }
   PACKAGE: {
-    start: { r: 255, g: 100, b: 100 },
-    end: { r: 255, g: 100, b: 100 }
+    r: 255,
+    g: 100,
+    b: 100
   },
   FILE: {
-    start: { r: 255, g: 255, b: 255 },
-    end: { r: 0, g: 0, b: 0 }
+    r: 255,
+    g: 255,
+    b: 255
   },
   STRUCT: {
-    start: { r: 32, g: 156, b: 238 },
-    end: { r: 0, g: 0, b: 0 }
+    r: 32,
+    g: 156,
+    b: 238
   },
   DEPENDANCY: {
-    start: { r: 0, g: 255, b: 0 },
-    end: { r: 0, g: 0, b: 0 }
+    r: 0,
+    g: 255,
+    b: 0
   }
 };
 
@@ -214,27 +234,40 @@ class App extends Component {
 
     children.forEach(data => {
       var color;
+      // if (data.type == "STRUCT" && data.superClass == dependancyClass) {
+      //   color = getProportionalColor(
+      //     colors["DEPENDANCY"].start,
+      //     colors["DEPENDANCY"].end,
+      //     Math.min(100, data.numberOfLines / 2000.0)
+      //   );
+      // } else {
+      //   color = getProportionalColor(
+      //     colors[data.type].start,
+      //     colors[data.type].end,
+      //     Math.min(100, data.numberOfLines / 2000.0)
+      //   );
+      // }
+      // if (data.interfaces != null) {
+      //   data.interfaces.forEach(element => {
+      //     if (element == inteface) {
+      //       color = getProportionalColor(
+      //         colors["DEPENDANCY"].start,
+      //         colors["DEPENDANCY"].end,
+      //         Math.min(100, data.numberOfLines / 2000.0)
+      //       );
+      //     }
+      //   });
+      // }
+
       if (data.type == "STRUCT" && data.superClass == dependancyClass) {
-        color = getProportionalColor(
-          colors["DEPENDANCY"].start,
-          colors["DEPENDANCY"].end,
-          Math.min(100, data.numberOfLines / 2000.0)
-        );
+        color = colors["DEPENDANCY"];
       } else {
-        color = getProportionalColor(
-          colors[data.type].start,
-          colors[data.type].end,
-          Math.min(100, data.numberOfLines / 2000.0)
-        );
+        color = colors[data.type];
       }
       if (data.interfaces != null) {
         data.interfaces.forEach(element => {
           if (element == inteface) {
-            color = getProportionalColor(
-              colors["DEPENDANCY"].start,
-              colors["DEPENDANCY"].end,
-              Math.min(100, data.numberOfLines / 2000.0)
-            );
+            color = colors["DEPENDANCY"];
           }
         });
       }
@@ -272,12 +305,12 @@ class App extends Component {
     if (width > 1000) {
       this.camera.useAutoRotationBehavior = false;
     } else {
-      this.camera.useAutoRotationBehavior = true;
+      this.camera.useAutoRotationBehavior = false;
     }
     width = Math.min(width, 1000);
     height = Math.min(height, 1000);
     this.camera.setPosition(
-      new BABYLON.Vector3(width / 2, width, (width + height) / 2)
+      new BABYLON.Vector3(width * 2, width * 2, (width + height) / 2)
     );
   }
 
