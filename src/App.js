@@ -49,9 +49,9 @@ const colors = {
     b: 0
   },
   SUPERCLASS: {
-    r: 0,
-    g: 255,
-    b: 255
+    r: 214,
+    g: 11,
+    b: 157
   }
 };
 
@@ -398,14 +398,9 @@ class App extends Component {
         this.setState({ loading: false });
         this.reset();
 
-        var list1 = response.data.supperClassList;
-        if (list1.length != 1) {
-          this.supperClassList = list1;
-        }
-        var list2 = response.data.interfacesList;
-        if (list2.length != 1) {
-          this.interfaceList = list2;
-        }
+        this.supperClassList = response.data.supperClassList;
+        this.interfaceList = response.data.interfacesList;
+
         this.responseData = response.data.children;
 
         this.plot(this.responseData, null, "", "");
