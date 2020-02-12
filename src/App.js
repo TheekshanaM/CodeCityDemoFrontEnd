@@ -23,22 +23,6 @@ const endpoint = "http://localhost:8080/CodeCity/load/changecity";
 
 // TODO: isolate in the constants file
 const colors = {
-  // PACKAGE: {
-  //   start: { r: 255, g: 100, b: 100 },
-  //   end: { r: 255, g: 100, b: 100 }
-  // },
-  // FILE: {
-  //   start: { r: 255, g: 255, b: 255 },
-  //   end: { r: 0, g: 0, b: 0 }
-  // },
-  // STRUCT: {
-  //   start: { r: 32, g: 156, b: 238 },
-  //   end: { r: 0, g: 0, b: 0 }
-  // },
-  // DEPENDANCY: {
-  //   start: { r: 0, g: 255, b: 0 },
-  //   end: { r: 0, g: 0, b: 0 }
-  // }
   PACKAGE: {
     r: 255,
     g: 100,
@@ -58,6 +42,16 @@ const colors = {
     r: 0,
     g: 255,
     b: 0
+  },
+  DIFF: {
+    r: 255,
+    g: 255,
+    b: 0
+  },
+  SUPERCLASS: {
+    r: 0,
+    g: 255,
+    b: 255
   }
 };
 
@@ -103,6 +97,7 @@ class App extends Component {
   interfaceList = ["no interfaces"];
   responseData = null;
   dependancyType;
+  isShowFileDiff = false;
 
   constructor(props) {
     super(props);
@@ -134,6 +129,7 @@ class App extends Component {
     this.openModal = this.openModal.bind(this);
     this.closeModal = this.closeModal.bind(this);
     this.getBadgeValue = this.getBadgeValue.bind(this);
+    this.handleChecked = this.handleChecked.bind(this);
   }
 
   // componentDidMount() {
@@ -229,38 +225,23 @@ class App extends Component {
     if (!children) {
       return;
     }
-    // this.commits = children.commits;
-    // console.log(children);
 
     children.forEach(data => {
       var color;
-      // if (data.type == "STRUCT" && data.superClass == dependancyClass) {
-      //   color = getProportionalColor(
-      //     colors["DEPENDANCY"].start,
-      //     colors["DEPENDANCY"].end,
-      //     Math.min(100, data.numberOfLines / 2000.0)
-      //   );
-      // } else {
-      //   color = getProportionalColor(
-      //     colors[data.type].start,
-      //     colors[data.type].end,
-      //     Math.min(100, data.numberOfLines / 2000.0)
-      //   );
-      // }
-      // if (data.interfaces != null) {
-      //   data.interfaces.forEach(element => {
-      //     if (element == inteface) {
-      //       color = getProportionalColor(
-      //         colors["DEPENDANCY"].start,
-      //         colors["DEPENDANCY"].end,
-      //         Math.min(100, data.numberOfLines / 2000.0)
-      //       );
-      //     }
-      //   });
-      // }
 
       if (data.type == "STRUCT" && data.superClass == dependancyClass) {
         color = colors["DEPENDANCY"];
+      } else if (
+        data.type == "STRUCT" &&
+        data.fillDiffStatus &&
+        this.isShowFileDiff
+      ) {
+        color = colors["DIFF"];
+      } else if (
+        data.type == "STRUCT" &&
+        (data.name == dependancyClass || data.name == inteface)
+      ) {
+        color = colors["SUPERCLASS"];
       } else {
         color = colors[data.type];
       }
@@ -379,6 +360,17 @@ class App extends Component {
     var res = repository.split("/");
     var auther = res[res.length - 2];
     var repo = res[res.length - 1];
+
+    var oldCommit = 0;
+    var index = 0;
+    this.commits.forEach(element => {
+      if (commitId == element) {
+        if (index + 1 < this.commits.length) {
+          oldCommit = this.commits[index + 1];
+        }
+      }
+      index++;
+    });
     if (!BABYLON.Engine.isSupported()) {
       return;
     }
@@ -396,7 +388,9 @@ class App extends Component {
         "/" +
         repo +
         "/" +
-        commitId
+        commitId +
+        "/" +
+        oldCommit
     );
 
     request
@@ -404,7 +398,17 @@ class App extends Component {
         this.setState({ loading: false });
         this.reset();
 
-        this.plot(response.data.children, null, "");
+        var list1 = response.data.supperClassList;
+        if (list1.length != 1) {
+          this.supperClassList = list1;
+        }
+        var list2 = response.data.interfacesList;
+        if (list2.length != 1) {
+          this.interfaceList = list2;
+        }
+        this.responseData = response.data.children;
+
+        this.plot(this.responseData, null, "", "");
         this.updateCamera(response.data.width, response.data.depth);
       })
       .catch(e => {
@@ -453,47 +457,16 @@ class App extends Component {
     if (json) {
       request = axios.get(json);
     } else {
-      // request = axios.get(endpoint, {
-      //   // params: {
-      //   //   q: match[1],
-      //   //   b: branch
-      //   // }
-      // });
       request = axios.get(
         "http://localhost:8080/CodeCity/load/loadcity/" + auther + "/" + repo
-        // "https://my-json-server.typicode.com/TheekshanaM/JsonDemo/posts"
       );
     }
 
     request
-      //   .then(response => {
-      //     this.setState({ loading: false });
-      //     this.reset();
-
-      //     var testJson = require("./test1.json");
-
-      //     this.commits = testJson.commits;
-      //     this.setState({ loadingTimeLine: true });
-      //     // console.log(this.commits);
-      //     this.plot(testJson.children);
-      //     this.updateCamera(testJson.width, testJson.depth);
-      //   })
-      //   .catch(e => {
-      //     this.setState({ loading: false });
-      //     swal(
-      //       "Error during plot",
-      //       "Something went wrong during the plot. Try again later",
-      //       "error"
-      //     );
-      //     console.error(e);
-      //   });
       .then(response => {
         this.setState({ loading: false });
         this.reset();
 
-        // if (response.data.children && response.data.children.length === 0) {
-        //   swal('Invalid project', 'Only Go projects are allowed.', 'error');
-        // }
         this.commits = response.data.commits;
         var list1 = response.data.supperClassList;
         if (list1.length != 1) {
@@ -621,6 +594,8 @@ class App extends Component {
 
   getDependency = event => {
     this.setState({ loading: true });
+    this.refs["checkBoxRef"].checked = false;
+    this.isShowFileDiff = false;
     if (this.dependancyType == "extends") {
       this.plot(this.responseData, null, event.target.value);
     } else {
@@ -629,6 +604,14 @@ class App extends Component {
     console.log(event.target.value);
     this.setState({ loading: false });
   };
+
+  handleChecked() {
+    this.setState({ loading: true });
+    this.isShowFileDiff = !this.isShowFileDiff;
+    console.log(this.isShowFileDiff);
+    this.plot(this.responseData, null, "", "");
+    this.setState({ loading: false });
+  }
 
   render() {
     return (
@@ -688,6 +671,11 @@ class App extends Component {
                 </option>
               ))}
             </select>
+            <input
+              type="checkbox"
+              onChange={this.handleChecked}
+              ref="checkBoxRef"
+            />
             {/* <Navbar /> */}
             {/* <p>
               GoCity is an implementation of the Code City metaphor for
