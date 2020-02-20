@@ -356,6 +356,9 @@ class App extends Component {
   }
 
   revertCode(repository, commitId) {
+    this.refs["dropdownRef"].selected = true;
+    this.supperTypeList = ["empty list"];
+
     this.currentCommit = commitId;
     var res = repository.split("/");
     var auther = res[res.length - 2];
@@ -424,6 +427,9 @@ class App extends Component {
   }
 
   process(repository, json, branch) {
+    this.refs["dropdownRef"].selected = true;
+    this.supperTypeList = ["empty list"];
+
     var res = repository.split("/");
     var auther = res[res.length - 2];
     var repo = res[res.length - 1];
@@ -584,6 +590,11 @@ class App extends Component {
     } else if (event.target.value == "implements") {
       this.supperTypeList = this.interfaceList;
       this.dependancyType = "implements";
+    } else {
+      this.setState({ loading: true });
+      this.supperTypeList = ["empty list"];
+      this.plot(this.responseData, null, "", "");
+      this.setState({ loading: false });
     }
   };
 
@@ -596,7 +607,6 @@ class App extends Component {
     } else {
       this.plot(this.responseData, null, "", event.target.value);
     }
-    console.log(event.target.value);
     this.setState({ loading: false });
   };
 
@@ -654,7 +664,9 @@ class App extends Component {
               />
             )}
             <select onChange={this.selectSuperType}>
-              <option value="">Select one</option>
+              <option ref="dropdownRef" value="">
+                Select one
+              </option>
               <option value="extends">Extends</option>
               <option value="implements">Implements</option>
             </select>
