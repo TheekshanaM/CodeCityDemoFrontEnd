@@ -117,6 +117,7 @@ class App extends Component {
     this.showTooltip = this.showTooltip.bind(this);
     this.hideTooltip = this.hideTooltip.bind(this);
     this.plot = this.plot.bind(this);
+    this.dependancyPlot = this.dependancyPlot.bind(this);
     this.process = this.process.bind(this);
     this.revertCode = this.revertCode.bind(this);
     this.reset = this.reset.bind(this);
@@ -221,7 +222,7 @@ class App extends Component {
     return bar;
   };
 
-  plot(children, parent, dependancyClass, inteface) {
+  plot(children, parent) {
     if (!children) {
       return;
     }
@@ -229,28 +230,10 @@ class App extends Component {
     children.forEach(data => {
       var color;
 
-      if (data.type == "STRUCT" && data.superClass == dependancyClass) {
-        color = colors["DEPENDANCY"];
-      } else if (
-        data.type == "STRUCT" &&
-        data.fillDiffStatus &&
-        this.isShowFileDiff
-      ) {
+      if (data.type == "STRUCT" && data.fillDiffStatus && this.isShowFileDiff) {
         color = colors["DIFF"];
-      } else if (
-        data.type == "STRUCT" &&
-        (data.name == dependancyClass || data.name == inteface)
-      ) {
-        color = colors["SUPERCLASS"];
       } else {
         color = colors[data.type];
-      }
-      if (data.interfaces != null) {
-        data.interfaces.forEach(element => {
-          if (element == inteface) {
-            color = colors["DEPENDANCY"];
-          }
-        });
       }
 
       var mesh = this.addBlock({
@@ -277,7 +260,69 @@ class App extends Component {
       }
 
       if (data.children && data.children.length > 0) {
-        this.plot(data.children, mesh, dependancyClass, inteface);
+        this.plot(data.children, mesh);
+      }
+    });
+  }
+
+  dependancyPlot(children, parent, dependancyClass, inteface) {
+    if (!children) {
+      return;
+    }
+
+    children.forEach(data => {
+      var color,
+        nOL = -1;
+
+      if (data.type == "STRUCT") {
+        if (data.superClass == dependancyClass) {
+          color = colors["DEPENDANCY"];
+          nOL = data.numberOfLines;
+        } else if (data.name == dependancyClass || data.name == inteface) {
+          color = colors["SUPERCLASS"];
+          nOL = data.numberOfLines;
+        } else {
+          color = colors[data.type];
+          // nOL = -1;
+        }
+      } else {
+        color = colors[data.type];
+        nOL = data.numberOfLines;
+      }
+      if (data.interfaces != null) {
+        data.interfaces.forEach(element => {
+          if (element == inteface) {
+            color = colors["DEPENDANCY"];
+            nOL = data.numberOfLines;
+          }
+        });
+      }
+
+      var mesh = this.addBlock({
+        x: data.position.x,
+        y: data.position.y,
+        width: data.width,
+        depth: data.depth,
+        height: nOL,
+        color: new BABYLON.Color3(color.r / 255, color.g / 255, color.b / 255),
+        parent: parent,
+        info: {
+          name: data.name,
+          url: data.url,
+          path: data.path,
+          type: data.type,
+          NOM: data.numberOfMethods,
+          NOL: data.numberOfLines,
+          NOA: data.numberOfAttributes
+        }
+      });
+
+      if (parent) {
+        mesh.parent = parent;
+      }
+
+      if (data.children && data.children.length > 0) {
+        this.dependancyPlot(data.children, mesh, dependancyClass, inteface);
       }
     });
   }
@@ -406,7 +451,7 @@ class App extends Component {
 
         this.responseData = response.data.children;
 
-        this.plot(this.responseData, null, "", "");
+        this.plot(this.responseData, null);
         this.updateCamera(response.data.width, response.data.depth);
       })
       .catch(e => {
@@ -481,7 +526,7 @@ class App extends Component {
         this.setState({ loadingTimeLine: true });
 
         this.responseData = response.data.children;
-        this.plot(this.responseData, null, "", "");
+        this.plot(this.responseData, null);
         this.updateCamera(response.data.width, response.data.depth);
       })
       .catch(e => {
@@ -593,7 +638,7 @@ class App extends Component {
     } else {
       this.setState({ loading: true });
       this.supperTypeList = ["empty list"];
-      this.plot(this.responseData, null, "", "");
+      this.plot(this.responseData, null);
       this.setState({ loading: false });
     }
   };
@@ -602,19 +647,34 @@ class App extends Component {
     this.setState({ loading: true });
     this.refs["checkBoxRef"].checked = false;
     this.isShowFileDiff = false;
-    if (this.dependancyType == "extends") {
-      this.plot(this.responseData, null, event.target.value);
-    } else {
-      this.plot(this.responseData, null, "", event.target.value);
-    }
-    this.setState({ loading: false });
+    var eventValue = event.target.value;
+    setTimeout(
+      function() {
+        this.setState({ loading: false });
+        if (this.supperTypeList[0] != eventValue) {
+          if (this.dependancyType == "extends") {
+            this.dependancyPlot(this.responseData, null, eventValue, "");
+          } else {
+            this.dependancyPlot(this.responseData, null, "", eventValue);
+          }
+        } else {
+          this.plot(this.responseData, null);
+        }
+        this.updateCamera(
+          this.responseData[0].width,
+          this.responseData[0].depth
+        );
+      }.bind(this),
+      1
+    );
   };
 
   handleChecked() {
     this.setState({ loading: true });
     this.isShowFileDiff = !this.isShowFileDiff;
-    console.log(this.isShowFileDiff);
-    this.plot(this.responseData, null, "", "");
+    this.refs["dropdownRef"].selected = true;
+    this.supperTypeList = ["empty list"];
+    this.plot(this.responseData, null);
     this.setState({ loading: false });
   }
 
