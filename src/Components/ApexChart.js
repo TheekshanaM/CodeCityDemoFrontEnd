@@ -68,12 +68,14 @@ export default class ApexChart extends React.Component {
     return (
       <div>
         <div id="chart">
+          <p>{this.props.classPath}</p>
           <ReactApexChart
             options={this.state.options}
             series={this.state.series}
             type="rangeBar"
             height={250}
           />
+          <p style={{ float: "right" }}>Line Numbers</p>
         </div>
         {/* <div id="html-dist"></div> */}
       </div>

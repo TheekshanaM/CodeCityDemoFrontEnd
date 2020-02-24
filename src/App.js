@@ -98,6 +98,7 @@ class App extends Component {
   responseData = null;
   dependancyType;
   isShowFileDiff = false;
+  selectedClass = "";
 
   constructor(props) {
     super(props);
@@ -590,6 +591,7 @@ class App extends Component {
         if (response.data != "") {
           if (response.data.obj.length != 0) {
             this.fileDiff = response.data.obj;
+            this.selectedClass = path;
             this.setState({ modalActive: true });
           } else {
             swal("Message", "nothing defferece two commits", "error");
@@ -814,7 +816,10 @@ class App extends Component {
               <section className="modal-card-body">
                 <div class="content">
                   {this.state.modalActive ? (
-                    <ApexCharts diff={this.fileDiff} />
+                    <ApexCharts
+                      classPath={this.selectedClass}
+                      diff={this.fileDiff}
+                    />
                   ) : null}
                 </div>
               </section>
