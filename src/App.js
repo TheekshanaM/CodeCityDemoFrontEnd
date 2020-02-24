@@ -33,7 +33,7 @@ const colors = {
     g: 255,
     b: 255
   },
-  STRUCT: {
+  CLASS: {
     r: 32,
     g: 156,
     b: 238
@@ -202,7 +202,7 @@ class App extends Component {
         this.hideTooltip
       )
     );
-    if (bar.info.type == "STRUCT") {
+    if (bar.info.type == "CLASS") {
       bar.actionManager.registerAction(
         new BABYLON.ExecuteCodeAction(
           BABYLON.ActionManager.OnPickTrigger,
@@ -231,7 +231,7 @@ class App extends Component {
     children.forEach(data => {
       var color;
 
-      if (data.type == "STRUCT" && data.fillDiffStatus && this.isShowFileDiff) {
+      if (data.type == "CLASS" && data.fillDiffStatus && this.isShowFileDiff) {
         color = colors["DIFF"];
       } else {
         color = colors[data.type];
@@ -275,7 +275,7 @@ class App extends Component {
       var color,
         nOL = -1;
 
-      if (data.type == "STRUCT") {
+      if (data.type == "CLASS") {
         if (data.superClass == dependancyClass) {
           color = colors["DEPENDANCY"];
           nOL = data.numberOfLines;
