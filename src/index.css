@@ -82,6 +82,11 @@ main {
   -moz-border-radius-topleft: 5px;
   border-top-left-radius: 5px;
 }
+.key-img {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+}
 
 .legend-ico {
   width: 10px;

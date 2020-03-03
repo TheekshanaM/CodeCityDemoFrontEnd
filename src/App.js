@@ -6,6 +6,7 @@ import axios from "axios";
 import Navbar from "./Nav";
 import Legend from "./Legend";
 import Loading from "./Loading";
+import LoadingImage from "./img/loadingImage.gif";
 import {
   feedbackEvent,
   getProportionalColor,
@@ -17,6 +18,8 @@ import Cookies from "js-cookie";
 import HorizontalTimelineContent from "./Components/HorizontalTimelineContent";
 import ApexCharts from "./Components/ApexChart";
 import BugView from "./Components/BugView";
+import SuperClassImage from "./img/super_class.png";
+import InterfaceImage from "./img/interface.png";
 
 const URLRegexp = new RegExp(/^(?:https:\/\/?)?(github\.com\/.*)/i);
 
@@ -113,12 +116,14 @@ class App extends Component {
     this.state = {
       feedbackFormActive: false,
       loading: false,
+      fileDiffLoading: false,
       loadingTimeLine: false,
-      repository:
-        this.props.match.params.repository || "github.com/rodrigo-brito/gocity",
+      repository: this.props.match.params.repository || "",
       branch: this.props.match.params.branch || "master",
       modalActive: false,
-      bugModalActive: false
+      bugModalActive: false,
+      superClassImageState: false,
+      interfaceImageState: false
     };
 
     this.addBlock = this.addBlock.bind(this);
@@ -335,7 +340,9 @@ class App extends Component {
           type: data.type,
           NOM: data.numberOfMethods,
           NOL: data.numberOfLines,
-          NOA: data.numberOfAttributes
+          NOA: data.numberOfAttributes,
+          superClass: data.superClass,
+          interfaces: data.interfaces
         }
       });
 
@@ -447,7 +454,9 @@ class App extends Component {
 
     this.setState({
       // repository: match[1],
-      loading: true
+      loading: true,
+      superClassImageState: false,
+      interfaceImageState: false
     });
 
     let request = null;
@@ -518,7 +527,9 @@ class App extends Component {
 
     this.setState({
       repository: match[1],
-      loading: true
+      loading: true,
+      superClassImageState: false,
+      interfaceImageState: false
     });
 
     let request = null;
@@ -605,6 +616,7 @@ class App extends Component {
 
   openModal(path, numberOfLines) {
     // this.fileDiff = require("./test.json");
+    this.setState({ fileDiffLoading: true });
     var oldCommit;
     var index = 0;
     this.commits.forEach(element => {
@@ -628,7 +640,7 @@ class App extends Component {
 
     request
       .then(response => {
-        console.log(response);
+        this.setState({ fileDiffLoading: false });
         if (response.data != "") {
           if (response.data.obj.length != 0) {
             this.fileDiff = response.data.obj;
@@ -638,6 +650,7 @@ class App extends Component {
             swal("Message", "nothing defferece two commits", "error");
           }
         } else {
+          this.setState({ fileDiffLoading: false });
           swal(
             "Error during plot",
             "Something went wrong during the plot. Try again later",
@@ -647,6 +660,7 @@ class App extends Component {
       })
       .catch(e => {
         // this.setState({ loading: false });
+        this.setState({ fileDiffLoading: false });
         swal(
           "Error during plot",
           "Something went wrong during the plot. Try again later",
@@ -672,7 +686,11 @@ class App extends Component {
   }
 
   selectSuperType = event => {
-    this.setState({ value: event.target.value });
+    this.setState({
+      value: event.target.value,
+      superClassImageState: false,
+      interfaceImageState: false
+    });
     if (event.target.value == "extends") {
       this.supperTypeList = this.supperClassList;
       this.dependancyType = "extends";
@@ -700,11 +718,23 @@ class App extends Component {
         if (this.supperTypeList[0] != eventValue) {
           if (this.dependancyType == "extends") {
             this.dependancyPlot(this.responseData, null, eventValue, "");
+            this.setState({
+              superClassImageState: true,
+              interfaceImageState: false
+            });
           } else {
             this.dependancyPlot(this.responseData, null, "", eventValue);
+            this.setState({
+              superClassImageState: false,
+              interfaceImageState: true
+            });
           }
         } else {
           this.plot(this.responseData, null);
+          this.setState({
+            superClassImageState: false,
+            interfaceImageState: false
+          });
         }
         this.updateCamera(
           this.responseData[0].width,
@@ -716,7 +746,11 @@ class App extends Component {
   };
 
   handleChecked() {
-    this.setState({ loading: true });
+    this.setState({
+      loading: true,
+      superClassImageState: false,
+      interfaceImageState: false
+    });
     this.refs["BugcheckBoxRef"].checked = false;
     this.isShowBug = false;
     this.isShowFileDiff = !this.isShowFileDiff;
@@ -727,7 +761,11 @@ class App extends Component {
   }
 
   handleBug() {
-    this.setState({ loading: true });
+    this.setState({
+      loading: true,
+      superClassImageState: false,
+      interfaceImageState: false
+    });
     this.refs["checkBoxRef"].checked = false;
     this.isShowFileDiff = false;
     this.isShowBug = !this.isShowBug;
@@ -770,6 +808,7 @@ class App extends Component {
             />
           </svg>
         </a>
+
         <FloatBox
           position={this.state.infoPosition}
           info={this.state.infoData}
@@ -786,32 +825,7 @@ class App extends Component {
                 repo={this.state.repository}
               />
             )}
-            <select onChange={this.selectSuperType}>
-              <option ref="dropdownRef" value="">
-                Select one
-              </option>
-              <option value="extends">Extends</option>
-              <option value="implements">Implements</option>
-            </select>
-            <select onChange={this.getDependency}>
-              {this.supperTypeList.map(list => (
-                <option key={list} value={list}>
-                  {list}
-                </option>
-              ))}
-            </select>
-            <input
-              type="checkbox"
-              onChange={this.handleChecked}
-              ref="checkBoxRef"
-            />
-            show diff
-            <input
-              type="checkbox"
-              onChange={this.handleBug}
-              ref="BugcheckBoxRef"
-            />
-            show bug
+
             {/* <Navbar /> */}
             {/* <p>
               GoCity is an implementation of the Code City metaphor for
@@ -820,15 +834,15 @@ class App extends Component {
                 more details.
               </a>
             </p> */}
-            <p>
+            {/* <p>
               You can also add a custom badge for your go repository.{" "}
               <a onClick={this.bugModal} href="#">
                 click here
               </a>{" "}
               to generate one.
-            </p>
+            </p> */}
             <div className="field has-addons">
-              <div className="control is-expanded">
+              <div className="control" style={{ width: "50%" }}>
                 <input
                   onKeyPress={this.handleKeyPress}
                   onChange={this.onInputChange}
@@ -839,7 +853,7 @@ class App extends Component {
                   value={this.state.repository}
                 />
               </div>
-              <div className="control">
+              {/* <div className="control">
                 <input
                   onKeyPress={this.handleKeyPress}
                   onChange={this.onInputChange}
@@ -849,7 +863,7 @@ class App extends Component {
                   placeholder="eg: master"
                   value={this.state.branch}
                 />
-              </div>
+              </div> */}
               <div className="control">
                 <a
                   id="search"
@@ -858,6 +872,39 @@ class App extends Component {
                 >
                   Plot
                 </a>
+              </div>
+              <select
+                onChange={this.selectSuperType}
+                style={{ marginLeft: "auto" }}
+              >
+                <option ref="dropdownRef" value="">
+                  Select one
+                </option>
+                <option value="extends">Extends</option>
+                <option value="implements">Implements</option>
+              </select>
+              <select onChange={this.getDependency} style={{ marginLeft: 10 }}>
+                {this.supperTypeList.map(list => (
+                  <option key={list} value={list}>
+                    {list}
+                  </option>
+                ))}
+              </select>
+              <div style={{ marginLeft: 10 }}>
+                <input
+                  type="checkbox"
+                  onChange={this.handleChecked}
+                  ref="checkBoxRef"
+                />
+                show diff
+              </div>
+              <div style={{ marginLeft: 10 }}>
+                <input
+                  type="checkbox"
+                  onChange={this.handleBug}
+                  ref="BugcheckBoxRef"
+                />
+                show bug
               </div>
             </div>
             {/* <div className="level">
@@ -902,7 +949,7 @@ class App extends Component {
             className={this.state.bugModalActive ? "modal is-active" : "modal"}
           >
             <div className="modal-background"></div>
-            <div className="modal-card" style={{ width: "80%" }}>
+            <div className="modal-card" style={{ width: "80%", height: "60%" }}>
               <section className="modal-card-body">
                 <div class="content">
                   {this.state.bugModalActive ? (
@@ -922,7 +969,27 @@ class App extends Component {
             ></button>
           </div>
         </header>
+
+        {this.state.fileDiffLoading ? (
+          <img
+            src={LoadingImage}
+            alt=""
+            style={{
+              position: "absolute",
+              left: "50%",
+              top: "50%",
+              width: "8%"
+            }}
+          />
+        ) : null}
+
         <section className="canvas">
+          {this.state.superClassImageState ? (
+            <img className="key-img" src={SuperClassImage} alt="" />
+          ) : null}
+          {this.state.interfaceImageState ? (
+            <img className="key-img" src={InterfaceImage} alt="" />
+          ) : null}
           {this.state.loading ? (
             <Loading message="Fetching repository..." />
           ) : (

@@ -18,9 +18,13 @@ export default ({ position, info, visible }) => {
             {info.superClass != undefined ? <b>Extend: </b> : null}
             <span className="extend">{info.superClass}</span>
             {info.superClass != undefined ? <br /> : null}
-            {info.interfaces.length != 0 ? <b>Impliment: </b> : null}
+            {info.interfaces != undefined && info.interfaces.length != 0 ? (
+              <b>Impliment: </b>
+            ) : null}
             <span className="impliment">{info.interfaces}</span>
-            {info.interfaces.length != 0 ? <br /> : null}
+            {info.interfaces != undefined && info.interfaces.length != 0 ? (
+              <br />
+            ) : null}
             <b>Lines: </b>
             <span className="lines">{info.NOL}</span>
             <br />

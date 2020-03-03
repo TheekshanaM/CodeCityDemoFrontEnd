@@ -2,8 +2,20 @@ import React from "react";
 import View from "react-art";
 // import "bootstrap/dist/css/bootstrap.min.css";
 const bugDetails = {
-  Long_Statement: "gggggggg",
-  fcfcg: "bfbf"
+  Long_Statement:
+    "Methods which includes long statements. Here statement’s  character length which are equal or more than 130 are considered as long statement.",
+  Long_Method:
+    "A method which contains large number of lines and performs more than one action is considered as “Long Method.” It is comparatively difficult to understand a large method in comparison to  small methods.",
+  Long_Parameter_List:
+    "When the number of parameters passed to a method is more than what is actually required for the functionality of the method, it indicates the presence of “Long Parameter List” smell.",
+  Complex_Conditional:
+    "If there are more than or equal to 3 boolean sub expressions inside the if statement then it is considered as a complex conditional smell",
+  Complex_Method:
+    "Methods with cyclomatic complexities are complex method. Cyclocmatic complexity = Number of decision points + 1 The decision points may be your conditional statements like if, if … else, switch , for loop, while loop etc.",
+  Long_Identifier:
+    "length of the identifier name is limited to 30 (character Length). If the length is more than or equal to 30 then it is considered as a long identifier.",
+  Magic_Number:
+    "Presence of undefined literal expresiions in a code is comes under the smell of Magic Numbers."
 };
 
 export default class BugView extends React.Component {
@@ -70,7 +82,8 @@ export default class BugView extends React.Component {
             float: "left",
             width: "49%",
             backgroundColor: "#f0f0f0",
-            padding: 5
+            padding: 5,
+            height: 342
           }}
         >
           <p>Methods</p>
@@ -85,16 +98,24 @@ export default class BugView extends React.Component {
           <div
             style={{
               float: "right",
-              width: "49%",
+              width: "59%",
               backgroundColor: "#f0f0f0",
-              padding: 5
+              padding: 5,
+              height: 342
             }}
           >
             <p>Bug Details</p>
             <div style={tooltipStyle}>{this.tooltip}</div>
           </div>
 
-          <div style={{ width: "49%", backgroundColor: "#f0f0f0", padding: 5 }}>
+          <div
+            style={{
+              width: "39%",
+              backgroundColor: "#f0f0f0",
+              padding: 5,
+              height: 342
+            }}
+          >
             <p>Bug List</p>
             <ul>
               {this.state.bugs.map(list => (
