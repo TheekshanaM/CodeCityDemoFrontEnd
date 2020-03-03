@@ -16,6 +16,7 @@ import swal from "sweetalert2";
 import Cookies from "js-cookie";
 import HorizontalTimelineContent from "./Components/HorizontalTimelineContent";
 import ApexCharts from "./Components/ApexChart";
+import BugView from "./Components/BugView";
 
 const URLRegexp = new RegExp(/^(?:https:\/\/?)?(github\.com\/.*)/i);
 
@@ -52,6 +53,11 @@ const colors = {
     r: 214,
     g: 11,
     b: 157
+  },
+  BUG: {
+    r: 255,
+    g: 0,
+    b: 0
   }
 };
 
@@ -99,6 +105,8 @@ class App extends Component {
   dependancyType;
   isShowFileDiff = false;
   selectedClass = "";
+  isShowBug = false;
+  bugList = "";
 
   constructor(props) {
     super(props);
@@ -109,7 +117,8 @@ class App extends Component {
       repository:
         this.props.match.params.repository || "github.com/rodrigo-brito/gocity",
       branch: this.props.match.params.branch || "master",
-      modalActive: false
+      modalActive: false,
+      bugModalActive: false
     };
 
     this.addBlock = this.addBlock.bind(this);
@@ -132,6 +141,8 @@ class App extends Component {
     this.closeModal = this.closeModal.bind(this);
     this.getBadgeValue = this.getBadgeValue.bind(this);
     this.handleChecked = this.handleChecked.bind(this);
+    this.bugModal = this.bugModal.bind(this);
+    this.handleBug = this.handleBug.bind(this);
   }
 
   // componentDidMount() {
@@ -207,8 +218,13 @@ class App extends Component {
         new BABYLON.ExecuteCodeAction(
           BABYLON.ActionManager.OnPickTrigger,
           () => {
-            this.hideTooltip;
-            this.openModal(bar.info.path, bar.info.NOL);
+            if (this.isShowFileDiff) {
+              this.hideTooltip;
+              this.openModal(bar.info.path, bar.info.NOL);
+            } else if (this.isShowBug) {
+              this.bugList = bar.info.bugLIst;
+              this.bugModal();
+            }
           }
         )
       );
@@ -233,6 +249,8 @@ class App extends Component {
 
       if (data.type == "CLASS" && data.fillDiffStatus && this.isShowFileDiff) {
         color = colors["DIFF"];
+      } else if (data.type == "CLASS" && data.bugStatus && this.isShowBug) {
+        color = colors["BUG"];
       } else {
         color = colors[data.type];
       }
@@ -252,7 +270,10 @@ class App extends Component {
           type: data.type,
           NOM: data.numberOfMethods,
           NOL: data.numberOfLines,
-          NOA: data.numberOfAttributes
+          NOA: data.numberOfAttributes,
+          bugLIst: data.methodBugList,
+          superClass: data.superClass,
+          interfaces: data.interfaces
         }
       });
 
@@ -539,6 +560,26 @@ class App extends Component {
         );
         console.error(e);
       });
+    // var testJson = require("./test1.json");
+
+    // this.setState({ loading: false });
+    // this.reset();
+
+    // this.commits = testJson.commits;
+    // var list1 = testJson.supperClassList;
+    // if (list1.length != 1) {
+    //   this.supperClassList = list1;
+    // }
+    // var list2 = testJson.interfacesList;
+    // if (list2.length != 1) {
+    //   this.interfaceList = list2;
+    // }
+    // this.currentCommit = this.commits[0];
+    // this.setState({ loadingTimeLine: true });
+
+    // this.responseData = testJson.children;
+    // this.plot(this.responseData, null);
+    // this.updateCamera(testJson.width, testJson.depth);
 
     // this.scene.freezeActiveMeshes();
     this.scene.autoClear = false; // Color buffer
@@ -617,6 +658,7 @@ class App extends Component {
 
   closeModal() {
     this.setState({ modalActive: false });
+    this.setState({ bugModalActive: false });
   }
 
   getBadgeValue(template) {
@@ -649,6 +691,8 @@ class App extends Component {
     this.setState({ loading: true });
     this.refs["checkBoxRef"].checked = false;
     this.isShowFileDiff = false;
+    this.refs["BugcheckBoxRef"].checked = false;
+    this.isShowBug = false;
     var eventValue = event.target.value;
     setTimeout(
       function() {
@@ -673,11 +717,28 @@ class App extends Component {
 
   handleChecked() {
     this.setState({ loading: true });
+    this.refs["BugcheckBoxRef"].checked = false;
+    this.isShowBug = false;
     this.isShowFileDiff = !this.isShowFileDiff;
     this.refs["dropdownRef"].selected = true;
     this.supperTypeList = ["empty list"];
     this.plot(this.responseData, null);
     this.setState({ loading: false });
+  }
+
+  handleBug() {
+    this.setState({ loading: true });
+    this.refs["checkBoxRef"].checked = false;
+    this.isShowFileDiff = false;
+    this.isShowBug = !this.isShowBug;
+    this.refs["dropdownRef"].selected = true;
+    this.supperTypeList = ["empty list"];
+    this.plot(this.responseData, null);
+    this.setState({ loading: false });
+  }
+
+  bugModal() {
+    this.setState({ bugModalActive: true });
   }
 
   render() {
@@ -732,7 +793,6 @@ class App extends Component {
               <option value="extends">Extends</option>
               <option value="implements">Implements</option>
             </select>
-
             <select onChange={this.getDependency}>
               {this.supperTypeList.map(list => (
                 <option key={list} value={list}>
@@ -745,6 +805,13 @@ class App extends Component {
               onChange={this.handleChecked}
               ref="checkBoxRef"
             />
+            show diff
+            <input
+              type="checkbox"
+              onChange={this.handleBug}
+              ref="BugcheckBoxRef"
+            />
+            show bug
             {/* <Navbar /> */}
             {/* <p>
               GoCity is an implementation of the Code City metaphor for
@@ -752,14 +819,14 @@ class App extends Component {
               <a href="https://github.com/rodrigo-brito/gocity">
                 more details.
               </a>
-            </p>
+            </p> */}
             <p>
               You can also add a custom badge for your go repository.{" "}
-              <a onClick={this.openModal} href="#">
+              <a onClick={this.bugModal} href="#">
                 click here
               </a>{" "}
               to generate one.
-            </p> */}
+            </p>
             <div className="field has-addons">
               <div className="control is-expanded">
                 <input
@@ -793,7 +860,7 @@ class App extends Component {
                 </a>
               </div>
             </div>
-            <div className="level">
+            {/* <div className="level">
               <small className="level-left">
                 Examples:{" "}
                 {examples.map(example => (
@@ -808,7 +875,7 @@ class App extends Component {
                   </a>
                 ))}
               </small>
-            </div>
+            </div> */}
           </div>
           <div className={this.state.modalActive ? "modal is-active" : "modal"}>
             <div className="modal-background"></div>
@@ -821,6 +888,30 @@ class App extends Component {
                       diff={this.fileDiff}
                     />
                   ) : null}
+                </div>
+              </section>
+            </div>
+            <button
+              onClick={this.closeModal}
+              className="modal-close is-large"
+              aria-label="close"
+            ></button>
+          </div>
+
+          <div
+            className={this.state.bugModalActive ? "modal is-active" : "modal"}
+          >
+            <div className="modal-background"></div>
+            <div className="modal-card" style={{ width: "80%" }}>
+              <section className="modal-card-body">
+                <div class="content">
+                  {this.state.bugModalActive ? (
+                    <BugView BugList={this.bugList} />
+                  ) : // <ApexCharts
+                  //   classPath={this.selectedClass}
+                  //   diff={this.fileDiff}
+                  // />
+                  null}
                 </div>
               </section>
             </div>

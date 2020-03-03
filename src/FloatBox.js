@@ -13,8 +13,14 @@ export default ({ position, info, visible }) => {
           {" "}
           {info.name || "Root"} [{info.type}]
         </h4>
-        {info.type !== "PACKAGE" && (
+        {info.type === "CLASS" && (
           <div>
+            {info.superClass != undefined ? <b>Extend: </b> : null}
+            <span className="extend">{info.superClass}</span>
+            {info.superClass != undefined ? <br /> : null}
+            {info.interfaces.length != 0 ? <b>Impliment: </b> : null}
+            <span className="impliment">{info.interfaces}</span>
+            {info.interfaces.length != 0 ? <br /> : null}
             <b>Lines: </b>
             <span className="lines">{info.NOL}</span>
             <br />
