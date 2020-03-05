@@ -20,11 +20,26 @@ import ApexCharts from "./Components/ApexChart";
 import BugView from "./Components/BugView";
 import SuperClassImage from "./img/super_class.png";
 import InterfaceImage from "./img/interface.png";
+import { Treebeard } from "react-treebeard";
 
 const URLRegexp = new RegExp(/^(?:https:\/\/?)?(github\.com\/.*)/i);
 
 const endpoint = "http://localhost:8080/CodeCity/load/changecity";
 
+var data = {
+  // name: "CodeCityTestRepo",
+  // children: [
+  //   {
+  //     name: "folder1",
+  //     children: [
+  //       {
+  //         name: "folder2",
+  //         children: [{ name: "ClassF.java" }, { name: "TestInterface.java" }]
+  //       }
+  //     ]
+  //   }
+  // ]
+};
 // TODO: isolate in the constants file
 const colors = {
   PACKAGE: {
@@ -123,7 +138,8 @@ class App extends Component {
       modalActive: false,
       bugModalActive: false,
       superClassImageState: false,
-      interfaceImageState: false
+      interfaceImageState: false,
+      data
     };
 
     this.addBlock = this.addBlock.bind(this);
@@ -148,6 +164,7 @@ class App extends Component {
     this.handleChecked = this.handleChecked.bind(this);
     this.bugModal = this.bugModal.bind(this);
     this.handleBug = this.handleBug.bind(this);
+    this.onToggle = this.onToggle.bind(this);
   }
 
   // componentDidMount() {
@@ -244,11 +261,12 @@ class App extends Component {
     return bar;
   };
 
-  plot(children, parent) {
+  plot(children, parent, className) {
     if (!children) {
       return;
     }
 
+    // var res = className.split(".java");
     children.forEach(data => {
       var color;
 
@@ -256,6 +274,8 @@ class App extends Component {
         color = colors["DIFF"];
       } else if (data.type == "CLASS" && data.bugStatus && this.isShowBug) {
         color = colors["BUG"];
+      } else if (data.type == "CLASS" && data.name == className) {
+        color = colors["SUPERCLASS"];
       } else {
         color = colors[data.type];
       }
@@ -287,7 +307,7 @@ class App extends Component {
       }
 
       if (data.children && data.children.length > 0) {
-        this.plot(data.children, mesh);
+        this.plot(data.children, mesh, className);
       }
     });
   }
@@ -477,12 +497,13 @@ class App extends Component {
         this.setState({ loading: false });
         this.reset();
 
+        this.state.data = response.data.structure.children[0];
         this.supperClassList = response.data.supperClassList;
         this.interfaceList = response.data.interfacesList;
 
         this.responseData = response.data.children;
 
-        this.plot(this.responseData, null);
+        this.plot(this.responseData, null, "");
         this.updateCamera(response.data.width, response.data.depth);
       })
       .catch(e => {
@@ -502,7 +523,7 @@ class App extends Component {
     this.scene.blockfreeActiveMeshesAndRenderingGroups = false;
   }
 
-  process(repository, json, branch) {
+  process(repository, json) {
     this.refs["dropdownRef"].selected = true;
     this.supperTypeList = ["empty list"];
 
@@ -518,12 +539,12 @@ class App extends Component {
       swal("Invalid URL", "Please inform a valid Github URL.", "error");
       return;
     }
-    if (
-      match !== this.props.match.params.repository ||
-      branch !== this.props.match.params.branch
-    ) {
-      this.props.history.push(`/${match[1]}/#/${branch}`);
-    }
+    // if (
+    //   match !== this.props.match.params.repository ||
+    //   branch !== this.props.match.params.branch
+    // ) {
+    //   this.props.history.push(`/${match[1]}/#/${branch}`);
+    // }
 
     this.setState({
       repository: match[1],
@@ -546,6 +567,7 @@ class App extends Component {
         this.setState({ loading: false });
         this.reset();
 
+        this.state.data = response.data.structure.children[0];
         this.commits = response.data.commits;
         var list1 = response.data.supperClassList;
         if (list1.length != 1) {
@@ -559,7 +581,7 @@ class App extends Component {
         this.setState({ loadingTimeLine: true });
 
         this.responseData = response.data.children;
-        this.plot(this.responseData, null);
+        this.plot(this.responseData, null, "");
         this.updateCamera(response.data.width, response.data.depth);
       })
       .catch(e => {
@@ -602,7 +624,7 @@ class App extends Component {
   onClick() {
     this.setState({ loadingTimeLine: false });
     searchEvent(this.state.repository);
-    this.process(this.state.repository, "", this.state.branch);
+    this.process(this.state.repository, "");
   }
 
   onFeedBackFormClose() {
@@ -700,7 +722,7 @@ class App extends Component {
     } else {
       this.setState({ loading: true });
       this.supperTypeList = ["empty list"];
-      this.plot(this.responseData, null);
+      this.plot(this.responseData, null, "");
       this.setState({ loading: false });
     }
   };
@@ -730,7 +752,7 @@ class App extends Component {
             });
           }
         } else {
-          this.plot(this.responseData, null);
+          this.plot(this.responseData, null, "");
           this.setState({
             superClassImageState: false,
             interfaceImageState: false
@@ -756,7 +778,7 @@ class App extends Component {
     this.isShowFileDiff = !this.isShowFileDiff;
     this.refs["dropdownRef"].selected = true;
     this.supperTypeList = ["empty list"];
-    this.plot(this.responseData, null);
+    this.plot(this.responseData, null, "");
     this.setState({ loading: false });
   }
 
@@ -771,7 +793,7 @@ class App extends Component {
     this.isShowBug = !this.isShowBug;
     this.refs["dropdownRef"].selected = true;
     this.supperTypeList = ["empty list"];
-    this.plot(this.responseData, null);
+    this.plot(this.responseData, null, "");
     this.setState({ loading: false });
   }
 
@@ -779,81 +801,112 @@ class App extends Component {
     this.setState({ bugModalActive: true });
   }
 
+  onToggle(node, toggled) {
+    const { cursor, data } = this.state;
+    this.setState({ loading: true });
+    if (cursor) {
+      cursor.active = false;
+      this.setState(() => ({ cursor, active: false }));
+    }
+    node.active = true;
+    if (node.children) {
+      node.toggled = toggled;
+    } else {
+      var className = node.name.substring(0, node.name.indexOf("."));
+      this.plot(this.responseData, null, className);
+    }
+    this.setState(() => ({ cursor: node, data: Object.assign({}, data) }));
+    this.setState({ loading: false });
+  }
+
   render() {
+    const { data } = this.state;
     return (
-      <main onMouseMove={this.onMouseMove}>
-        <a
-          href="https://github.com/rodrigo-brito/gocity"
-          className="github-corner is-hidden-tablet"
-          aria-label="View source on GitHub"
+      <div style={{ height: "100%" }}>
+        <div
+          style={{
+            width: "20%",
+            float: "left",
+            height: "100%",
+            overflow: "auto",
+            background: "#21252b"
+          }}
         >
-          <svg
-            width="80"
-            height="80"
-            viewBox="0 0 250 250"
-            style={{ fill: "#151513", color: "#fff" }}
-            aria-hidden="true"
+          <Treebeard data={data} onToggle={this.onToggle} />
+        </div>
+        <main onMouseMove={this.onMouseMove}>
+          <a
+            href="https://github.com/rodrigo-brito/gocity"
+            className="github-corner is-hidden-tablet"
+            aria-label="View source on GitHub"
           >
-            <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z" />
-            <path
-              d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
-              fill="currentColor"
-              style={{ transformOrigin: "130px 106px" }}
-              className="octo-arm"
-            />
-            <path
-              d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
-              fill="currentColor"
-              className="octo-body"
-            />
-          </svg>
-        </a>
-
-        <FloatBox
-          position={this.state.infoPosition}
-          info={this.state.infoData}
-          visible={this.state.infoVisible}
-        />
-        <header className="header">
-          <div className="container">
-            {!this.state.loadingTimeLine ? (
-              <Loading message="Fetching repository..." />
-            ) : (
-              <HorizontalTimelineContent
-                onRevertCode={this.revertCode}
-                valueArray={this.commits}
-                repo={this.state.repository}
+            <svg
+              width="80"
+              height="80"
+              viewBox="0 0 250 250"
+              style={{ fill: "#151513", color: "#fff" }}
+              aria-hidden="true"
+            >
+              <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z" />
+              <path
+                d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2"
+                fill="currentColor"
+                style={{ transformOrigin: "130px 106px" }}
+                className="octo-arm"
               />
-            )}
+              <path
+                d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z"
+                fill="currentColor"
+                className="octo-body"
+              />
+            </svg>
+          </a>
 
-            {/* <Navbar /> */}
-            {/* <p>
+          <FloatBox
+            position={this.state.infoPosition}
+            info={this.state.infoData}
+            visible={this.state.infoVisible}
+          />
+          <header className="header">
+            <div className="container">
+              {!this.state.loadingTimeLine ? (
+                <Loading message="Fetching repository..." />
+              ) : (
+                <HorizontalTimelineContent
+                  onRevertCode={this.revertCode}
+                  valueArray={this.commits}
+                  repo={this.state.repository}
+                />
+              )}
+
+              {/* <Navbar /> */}
+              {/* <p>
               GoCity is an implementation of the Code City metaphor for
               visualizing Go source code. Visit our repository for{" "}
               <a href="https://github.com/rodrigo-brito/gocity">
                 more details.
               </a>
             </p> */}
-            {/* <p>
+              {/* <p>
               You can also add a custom badge for your go repository.{" "}
               <a onClick={this.bugModal} href="#">
                 click here
               </a>{" "}
               to generate one.
             </p> */}
-            <div className="field has-addons">
-              <div className="control" style={{ width: "50%" }}>
-                <input
-                  onKeyPress={this.handleKeyPress}
-                  onChange={this.onInputChange}
-                  className="input"
-                  id="repository"
-                  type="text"
-                  placeholder="eg: github.com/golang/go"
-                  value={this.state.repository}
-                />
-              </div>
-              {/* <div className="control">
+              <div className="field has-addons">
+                <div className="control" style={{ width: "50%" }}>
+                  <input
+                    onKeyPress={this.handleKeyPress}
+                    onChange={this.onInputChange}
+                    className="input"
+                    id="repository"
+                    type="text"
+                    placeholder="eg: github.com/golang/go"
+                    value={this.state.repository}
+                  />
+                </div>
+                {/* <div className="control">
                 <input
                   onKeyPress={this.handleKeyPress}
                   onChange={this.onInputChange}
@@ -864,50 +917,53 @@ class App extends Component {
                   value={this.state.branch}
                 />
               </div> */}
-              <div className="control">
-                <a
-                  id="search"
-                  onClick={this.onClick}
-                  className="button is-info"
+                <div className="control">
+                  <a
+                    id="search"
+                    onClick={this.onClick}
+                    className="button is-info"
+                  >
+                    Plot
+                  </a>
+                </div>
+                <select
+                  onChange={this.selectSuperType}
+                  style={{ marginLeft: "2%" }}
                 >
-                  Plot
-                </a>
-              </div>
-              <select
-                onChange={this.selectSuperType}
-                style={{ marginLeft: "auto" }}
-              >
-                <option ref="dropdownRef" value="">
-                  Select one
-                </option>
-                <option value="extends">Extends</option>
-                <option value="implements">Implements</option>
-              </select>
-              <select onChange={this.getDependency} style={{ marginLeft: 10 }}>
-                {this.supperTypeList.map(list => (
-                  <option key={list} value={list}>
-                    {list}
+                  <option ref="dropdownRef" value="">
+                    Select one
                   </option>
-                ))}
-              </select>
-              <div style={{ marginLeft: 10 }}>
-                <input
-                  type="checkbox"
-                  onChange={this.handleChecked}
-                  ref="checkBoxRef"
-                />
-                show diff
+                  <option value="extends">Extends</option>
+                  <option value="implements">Implements</option>
+                </select>
+                <select
+                  onChange={this.getDependency}
+                  style={{ marginLeft: 10 }}
+                >
+                  {this.supperTypeList.map(list => (
+                    <option key={list} value={list}>
+                      {list}
+                    </option>
+                  ))}
+                </select>
+                <div style={{ marginLeft: 10 }}>
+                  <input
+                    type="checkbox"
+                    onChange={this.handleChecked}
+                    ref="checkBoxRef"
+                  />
+                  show diff
+                </div>
+                <div style={{ marginLeft: 10 }}>
+                  <input
+                    type="checkbox"
+                    onChange={this.handleBug}
+                    ref="BugcheckBoxRef"
+                  />
+                  show bug
+                </div>
               </div>
-              <div style={{ marginLeft: 10 }}>
-                <input
-                  type="checkbox"
-                  onChange={this.handleBug}
-                  ref="BugcheckBoxRef"
-                />
-                show bug
-              </div>
-            </div>
-            {/* <div className="level">
+              {/* <div className="level">
               <small className="level-left">
                 Examples:{" "}
                 {examples.map(example => (
@@ -923,88 +979,96 @@ class App extends Component {
                 ))}
               </small>
             </div> */}
-          </div>
-          <div className={this.state.modalActive ? "modal is-active" : "modal"}>
-            <div className="modal-background"></div>
-            <div className="modal-card">
-              <section className="modal-card-body">
-                <div class="content">
-                  {this.state.modalActive ? (
-                    <ApexCharts
-                      classPath={this.selectedClass}
-                      diff={this.fileDiff}
-                    />
-                  ) : null}
-                </div>
-              </section>
             </div>
-            <button
-              onClick={this.closeModal}
-              className="modal-close is-large"
-              aria-label="close"
-            ></button>
-          </div>
-
-          <div
-            className={this.state.bugModalActive ? "modal is-active" : "modal"}
-          >
-            <div className="modal-background"></div>
-            <div className="modal-card" style={{ width: "80%", height: "60%" }}>
-              <section className="modal-card-body">
-                <div class="content">
-                  {this.state.bugModalActive ? (
-                    <BugView BugList={this.bugList} />
-                  ) : // <ApexCharts
-                  //   classPath={this.selectedClass}
-                  //   diff={this.fileDiff}
-                  // />
-                  null}
-                </div>
-              </section>
+            <div
+              className={this.state.modalActive ? "modal is-active" : "modal"}
+            >
+              <div className="modal-background"></div>
+              <div className="modal-card">
+                <section className="modal-card-body">
+                  <div class="content">
+                    {this.state.modalActive ? (
+                      <ApexCharts
+                        classPath={this.selectedClass}
+                        diff={this.fileDiff}
+                      />
+                    ) : null}
+                  </div>
+                </section>
+              </div>
+              <button
+                onClick={this.closeModal}
+                className="modal-close is-large"
+                aria-label="close"
+              ></button>
             </div>
-            <button
-              onClick={this.closeModal}
-              className="modal-close is-large"
-              aria-label="close"
-            ></button>
-          </div>
-        </header>
 
-        {this.state.fileDiffLoading ? (
-          <img
-            src={LoadingImage}
-            alt=""
-            style={{
-              position: "absolute",
-              left: "50%",
-              top: "50%",
-              width: "8%"
-            }}
-          />
-        ) : null}
+            <div
+              className={
+                this.state.bugModalActive ? "modal is-active" : "modal"
+              }
+            >
+              <div className="modal-background"></div>
+              <div
+                className="modal-card"
+                style={{ width: "80%", height: "60%" }}
+              >
+                <section className="modal-card-body">
+                  <div class="content">
+                    {this.state.bugModalActive ? (
+                      <BugView BugList={this.bugList} />
+                    ) : // <ApexCharts
+                    //   classPath={this.selectedClass}
+                    //   diff={this.fileDiff}
+                    // />
+                    null}
+                  </div>
+                </section>
+              </div>
+              <button
+                onClick={this.closeModal}
+                className="modal-close is-large"
+                aria-label="close"
+              ></button>
+            </div>
+          </header>
 
-        <section className="canvas">
-          {this.state.superClassImageState ? (
-            <img className="key-img" src={SuperClassImage} alt="" />
-          ) : null}
-          {this.state.interfaceImageState ? (
-            <img className="key-img" src={InterfaceImage} alt="" />
-          ) : null}
-          {this.state.loading ? (
-            <Loading message="Fetching repository..." />
-          ) : (
-            <BabylonScene
-              width={window.innerWidth}
-              engineOptions={{ preserveDrawingBuffer: true, stencil: true }}
-              onSceneMount={this.onSceneMount}
+          {this.state.fileDiffLoading ? (
+            <img
+              src={LoadingImage}
+              alt=""
+              style={{
+                position: "absolute",
+                left: "50%",
+                top: "50%",
+                width: "8%"
+              }}
             />
-          )}
-        </section>
-        <div className="footer-warning notification is-danger is-hidden-tablet is-paddingless is-marginless is-unselectable">
-          GoCity is best viewed on Desktop
-        </div>
-        <Legend />
-      </main>
+          ) : null}
+
+          <section className="canvas">
+            {this.state.superClassImageState ? (
+              <img className="key-img" src={SuperClassImage} alt="" />
+            ) : null}
+            {this.state.interfaceImageState ? (
+              <img className="key-img" src={InterfaceImage} alt="" />
+            ) : null}
+            {this.state.loading ? (
+              <Loading message="Fetching repository..." />
+            ) : (
+              <BabylonScene
+                width={window.innerWidth}
+                engineOptions={{ preserveDrawingBuffer: true, stencil: true }}
+                onSceneMount={this.onSceneMount}
+              />
+            )}
+          </section>
+          <div className="footer-warning notification is-danger is-hidden-tablet is-paddingless is-marginless is-unselectable">
+            GoCity is best viewed on Desktop
+          </div>
+          <Legend />
+        </main>
+      </div>
     );
   }
 }
