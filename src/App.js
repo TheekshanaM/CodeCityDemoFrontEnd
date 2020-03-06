@@ -24,21 +24,24 @@ import { Treebeard } from "react-treebeard";
 
 const URLRegexp = new RegExp(/^(?:https:\/\/?)?(github\.com\/.*)/i);
 
-const endpoint = "http://localhost:8080/CodeCity/load/changecity";
+const endpoint = "http://localhost:8080/CodeCity/load/";
 
 var data = {
-  // name: "CodeCityTestRepo",
-  // children: [
-  //   {
-  //     name: "folder1",
-  //     children: [
-  //       {
-  //         name: "folder2",
-  //         children: [{ name: "ClassF.java" }, { name: "TestInterface.java" }]
-  //       }
-  //     ]
-  //   }
-  // ]
+  name: "CodeCityTestRepo",
+  toggled: true,
+  children: [
+    {
+      toggled: true,
+      name: "folder1",
+      children: [
+        {
+          toggled: true,
+          name: "folder2",
+          children: [{ name: "ClassF.java" }, { name: "TestInterface.java" }]
+        }
+      ]
+    }
+  ]
 };
 // TODO: isolate in the constants file
 const colors = {
@@ -130,6 +133,7 @@ class App extends Component {
   selectedClass = "";
   isShowBug = false;
   bugList = "";
+  bugLIstPath = "";
 
   constructor(props) {
     super(props);
@@ -249,8 +253,11 @@ class App extends Component {
               this.hideTooltip;
               this.openModal(bar.info.path, bar.info.NOL);
             } else if (this.isShowBug) {
-              this.bugList = bar.info.bugLIst;
-              this.bugModal();
+              if (data.bug) {
+                this.bugList = bar.info.bugLIst;
+                this.bugLIstPath = bar.info.path;
+                this.bugModal();
+              }
             }
           }
         )
@@ -274,13 +281,20 @@ class App extends Component {
     // var res = className.split(".java");
     children.forEach(data => {
       var color;
+      // if(className != ""){
 
-      if (data.type == "CLASS" && data.fillDiffStatus && this.isShowFileDiff) {
+      // }
+
+      if (data.type == "CLASS" && data.name == className) {
+        color = colors["STRUCTURE"];
+      } else if (
+        data.type == "CLASS" &&
+        data.fillDiffStatus &&
+        this.isShowFileDiff
+      ) {
         color = colors["DIFF"];
       } else if (data.type == "CLASS" && data.bugStatus && this.isShowBug) {
         color = colors["BUG"];
-      } else if (data.type == "CLASS" && data.name == className) {
-        color = colors["STRUCTURE"];
       } else {
         color = colors[data.type];
       }
@@ -293,6 +307,7 @@ class App extends Component {
         height: data.numberOfLines,
         color: new BABYLON.Color3(color.r / 255, color.g / 255, color.b / 255),
         parent: parent,
+        bug: data.bugStatus,
         info: {
           name: data.name,
           url: data.url,
@@ -487,7 +502,8 @@ class App extends Component {
     let request = null;
 
     request = axios.get(
-      "http://localhost:8080/CodeCity/load/changecity/" +
+      endpoint +
+        "changecity/" +
         auther +
         "/" +
         repo +
@@ -499,10 +515,10 @@ class App extends Component {
 
     request
       .then(response => {
+        this.state.data = response.data.structure.children[0];
         this.setState({ loading: false });
         this.reset();
 
-        this.state.data = response.data.structure.children[0];
         this.supperClassList = response.data.supperClassList;
         this.interfaceList = response.data.interfacesList;
 
@@ -562,9 +578,7 @@ class App extends Component {
     if (json) {
       request = axios.get(json);
     } else {
-      request = axios.get(
-        "http://localhost:8080/CodeCity/load/loadcity/" + auther + "/" + repo
-      );
+      request = axios.get(endpoint + "loadcity/" + auther + "/" + repo);
     }
 
     request
@@ -655,7 +669,8 @@ class App extends Component {
     path = path.replace(/\//g, ">");
     let request = null;
     request = axios.get(
-      "http://localhost:8080/CodeCity/load/filedifferent/" +
+      endpoint +
+        "filedifferent/" +
         path +
         "/" +
         this.currentCommit +
@@ -807,6 +822,8 @@ class App extends Component {
   }
 
   onToggle(node, toggled) {
+    this.refs["dropdownRef"].selected = true;
+    this.supperTypeList = ["empty list"];
     const { cursor, data } = this.state;
     this.setState({ loading: true });
     if (cursor) {
@@ -900,7 +917,7 @@ class App extends Component {
               to generate one.
             </p> */}
               <div className="field has-addons">
-                <div className="control" style={{ width: "50%" }}>
+                <div className="control" style={{ width: "40%" }}>
                   <input
                     onKeyPress={this.handleKeyPress}
                     onChange={this.onInputChange}
@@ -936,7 +953,7 @@ class App extends Component {
                   style={{ marginLeft: "2%" }}
                 >
                   <option ref="dropdownRef" value="">
-                    Select one
+                    Dependancy
                   </option>
                   <option value="extends">Extends</option>
                   <option value="implements">Implements</option>
@@ -957,7 +974,7 @@ class App extends Component {
                     onChange={this.handleChecked}
                     ref="checkBoxRef"
                   />
-                  show diff
+                  Compare Changes
                 </div>
                 <div style={{ marginLeft: 10 }}>
                   <input
@@ -965,7 +982,7 @@ class App extends Component {
                     onChange={this.handleBug}
                     ref="BugcheckBoxRef"
                   />
-                  show bug
+                  View bugs
                 </div>
               </div>
               {/* <div className="level">
@@ -1016,12 +1033,15 @@ class App extends Component {
               <div className="modal-background"></div>
               <div
                 className="modal-card"
-                style={{ width: "80%", height: "60%" }}
+                style={{ width: "80%", height: "auto" }}
               >
                 <section className="modal-card-body">
                   <div class="content">
                     {this.state.bugModalActive ? (
-                      <BugView BugList={this.bugList} />
+                      <BugView
+                        BugList={this.bugList}
+                        classPath={this.bugLIstPath}
+                      />
                     ) : // <ApexCharts
                     //   classPath={this.selectedClass}
                     //   diff={this.fileDiff}

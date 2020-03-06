@@ -26,7 +26,8 @@ export default class BugView extends React.Component {
       methods: [],
       bugs: [],
       hover: false,
-      tooltip: ""
+      tooltip: "",
+      tooltipActive: false
     };
 
     this.handleMouseIn = this.handleMouseIn.bind(this);
@@ -65,9 +66,11 @@ export default class BugView extends React.Component {
   }
 
   setMethodName(name) {
-    if (name.length > 16) {
-      return name.substring(0, 16) + "...";
+    if (name.length > 14) {
+      this.state.tooltipActive = true;
+      return name.substring(0, 14) + "...";
     }
+    this.state.tooltipActive = false;
     return name;
   }
 
@@ -77,6 +80,7 @@ export default class BugView extends React.Component {
     };
     return (
       <div>
+        <p>{this.props.classPath}</p>
         <div
           style={{
             float: "left",
@@ -89,7 +93,14 @@ export default class BugView extends React.Component {
           <p>Methods</p>
           {this.state.methods.map(list => (
             <div style={this.square} onClick={() => this.setBugList(list)}>
-              <p style={{ padding: 4 }}>{this.setMethodName(list)}</p>
+              <p class="tooltip" style={{ padding: 4 }}>
+                {this.setMethodName(list)}
+                <span
+                  className={this.state.tooltipActive ? "tooltiptext" : "hide"}
+                >
+                  {list}
+                </span>
+              </p>
             </div>
           ))}
         </div>
