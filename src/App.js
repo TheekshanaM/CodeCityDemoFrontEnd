@@ -76,6 +76,11 @@ const colors = {
     r: 255,
     g: 0,
     b: 0
+  },
+  STRUCTURE: {
+    r: 255,
+    g: 204,
+    b: 229
   }
 };
 
@@ -275,7 +280,7 @@ class App extends Component {
       } else if (data.type == "CLASS" && data.bugStatus && this.isShowBug) {
         color = colors["BUG"];
       } else if (data.type == "CLASS" && data.name == className) {
-        color = colors["SUPERCLASS"];
+        color = colors["STRUCTURE"];
       } else {
         color = colors[data.type];
       }
@@ -1048,10 +1053,20 @@ class App extends Component {
 
           <section className="canvas">
             {this.state.superClassImageState ? (
-              <img className="key-img" src={SuperClassImage} alt="" />
+              <img
+                style={{ left: "20%" }}
+                className="key-img"
+                src={SuperClassImage}
+                alt=""
+              />
             ) : null}
             {this.state.interfaceImageState ? (
-              <img className="key-img" src={InterfaceImage} alt="" />
+              <img
+                style={{ left: "20%" }}
+                className="key-img"
+                src={InterfaceImage}
+                alt=""
+              />
             ) : null}
             {this.state.loading ? (
               <Loading message="Fetching repository..." />
