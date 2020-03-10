@@ -10,12 +10,14 @@ const bugDetails = {
     "When the number of parameters passed to a method is more than what is actually required for the functionality of the method, it indicates the presence of “Long Parameter List” smell.",
   Complex_Conditional:
     "If there are more than or equal to 3 boolean sub expressions inside the if statement then it is considered as a complex conditional smell",
-  Complex_Method:
-    "Methods with cyclomatic complexities are complex method. Cyclocmatic complexity = Number of decision points + 1 The decision points may be your conditional statements like if, if … else, switch , for loop, while loop etc.",
+  // Complex_Method:
+  //   "Methods with cyclomatic complexities are complex method. Cyclocmatic complexity = Number of decision points + 1 The decision points may be your conditional statements like if, if … else, switch , for loop, while loop etc.",
   Long_Identifier:
     "length of the identifier name is limited to 30 (character Length). If the length is more than or equal to 30 then it is considered as a long identifier.",
-  Magic_Number:
-    "Presence of undefined literal expresiions in a code is comes under the smell of Magic Numbers."
+  Missing_default:
+    "If a switch case statement does not have a default case then it is considered as missing default.",
+  Empty_catch_clause:
+    "The catch clause of a try catch block should not be empty. If the catch clause is empty then it is detected as a bad smell in coding."
 };
 
 export default class BugView extends React.Component {

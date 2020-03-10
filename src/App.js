@@ -27,21 +27,21 @@ const URLRegexp = new RegExp(/^(?:https:\/\/?)?(github\.com\/.*)/i);
 const endpoint = "http://localhost:8080/CodeCity/load/";
 
 var data = {
-  name: "CodeCityTestRepo",
-  toggled: true,
-  children: [
-    {
-      toggled: true,
-      name: "folder1",
-      children: [
-        {
-          toggled: true,
-          name: "folder2",
-          children: [{ name: "ClassF.java" }, { name: "TestInterface.java" }]
-        }
-      ]
-    }
-  ]
+  // name: "CodeCityTestRepo",
+  // toggled: true,
+  // children: [
+  //   {
+  //     toggled: true,
+  //     name: "folder1",
+  //     children: [
+  //       {
+  //         toggled: true,
+  //         name: "folder2",
+  //         children: [{ name: "ClassF.java" }, { name: "TestInterface.java" }]
+  //       }
+  //     ]
+  //   }
+  // ]
 };
 // TODO: isolate in the constants file
 const colors = {
@@ -373,6 +373,7 @@ class App extends Component {
         height: nOL,
         color: new BABYLON.Color3(color.r / 255, color.g / 255, color.b / 255),
         parent: parent,
+        bug: data.bugStatus,
         info: {
           name: data.name,
           url: data.url,
@@ -381,6 +382,7 @@ class App extends Component {
           NOM: data.numberOfMethods,
           NOL: data.numberOfLines,
           NOA: data.numberOfAttributes,
+          bugLIst: data.methodBugList,
           superClass: data.superClass,
           interfaces: data.interfaces
         }
