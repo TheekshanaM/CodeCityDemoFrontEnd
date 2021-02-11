@@ -5,7 +5,7 @@
   "homepage": "http://go-city.github.io",
   "dependencies": {
     "@babel/plugin-transform-runtime": "^7.1.0",
-    "apexcharts": "^3.15.5",
+    "apexcharts": "^3.24.0",
     "axios": "^0.18.1",
     "babylonjs": "^3.2.0",
     "babylonjs-gui": "^3.2.0",
